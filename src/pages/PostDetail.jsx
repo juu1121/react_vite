@@ -340,7 +340,7 @@ function CommentLi({postNum, comment, onRefresh}){
                         <input type="hidden" name="targetWriter" defaultValue={comment.writer }/>
                         <input type="hidden" name="parentNum" defaultValue={comment.parentNum }/>
                         <textarea name="content"></textarea>
-                        <button type="submit">등록</button>
+                        <button type="submit">등록츄츄</button>
                     </form>
                 }
                 
