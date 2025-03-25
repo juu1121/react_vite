@@ -10,10 +10,28 @@ function PostFrom(props) {
     //SmartEditor에 작성한 내용을 textarea의 value로 넣어 줄 때 필요한 함수가 editorTool이다.
     const [editorTool, setEditorTool] = useState([])
 
+    //현재까지 입력한 내용을 상태값으로 관리
+    //const [currentContent, setCurrentContent] = useState("");
+
+
     useEffect(()=>{
         //initEditor()함수를 호출하면서 SmartEditor로 변환할 textarea의 id를 전달하면
         //textarea가 SmartEditor로 변경되면서 에디터 tool객체가 리턴된다.
         setEditorTool(initEditor("content")); //initEditor()함수를 호출해야 SmartEditor 가 초기화된다. 
+
+        //resize 이벤트가 발생할때마다 호출될 함수
+        const handleResize = ()=>{
+            editorTool.exec(); //에디터 tool을 이용해서 SmartEditor에 입력한 내용을 textarea의 value값으로 변환
+            setEditorTool(initEditor("content"));
+        }
+        //resize 이벤트가 발생할떄 실행할 함수 등록
+        window.addEventListener("resize", handleResize)
+
+        return ()=>{
+            //이벤트 리스너 제거하기
+            window.removeEventListener("resize", handleResize)
+        };
+
     }, [])
 
     //입력한 내용을 얻어오기 위한 useRef()

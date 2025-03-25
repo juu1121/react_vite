@@ -1,13 +1,10 @@
 // src/pages/Home.jsx
 
-import axios from 'axios';
-import React, { useRef, useState } from 'react';
-import { Alert, Button, Form } from 'react-bootstrap';
-import Markdown from 'react-markdown';
-import Quiz from './Quiz';
+import React from 'react';
 import api from '../api';
+import { Link } from 'react-router-dom';
 
-function Home(props) {
+function Home() {
     
 
     return (
@@ -18,10 +15,13 @@ function Home(props) {
                 .then(res=>{
                     alert(res.data);
                 })
-                .catch(error=>{
+                .catch(()=>{
                     alert("응답하지 않음");
                 });
             }}>Ping 요청 해보기</button>
+            <ul>
+                <li><Link to = "/posts/new?a=10&b=20" >Post에 글 남기기</Link></li>
+            </ul>
 
         </div>
     );

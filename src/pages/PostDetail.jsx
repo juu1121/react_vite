@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import ConfirmModal from '../components/ConfirmModal';
 import api from '../api';
 const cx=binder.bind(customCss);
+import { AnimatePresence, motion } from "framer-motion";
 
 function PostDetail(props) {
     // "/posts/:num" 에서 num 에 해당되는 경로 파라미터 값 읽어오기
@@ -130,7 +131,7 @@ function PostDetail(props) {
             <ConfirmModal show={modalShow} message="이 글을 삭제 하시겠습니까?" 
                 onCancel={()=>setModalShow(false)} onYes={()=>{
                 api.delete(`/posts/${state.num}`)
-                .then(res=>{
+                .then(()=>{
                     navigate("/posts");
                 })
                 .catch(error=>{
@@ -187,7 +188,13 @@ function PostDetail(props) {
                 <input type="hidden" name="postNum" defaultValue={num}/>
                  {/* <!-- 원글의 작성자가 댓글의 대상자가 된다. --> */}
                 <input type="hidden" name="targetWriter" defaultValue={state.writer}/>
-                <textarea name="content" defaultValue={!userName ? '댓글 작성을 위해 로그인이 필요 합니다' : '' }></textarea>
+                {userName ?
+                    <textarea key="ta1" name="content" />
+                :
+                    <textarea key="ta2" name="content" value="댓글 작성을 위해 로그인이 필요 합니다"></textarea>
+                }
+                {/* <textarea name="content" defaultValue={!userName ? '댓글 작성을 위해 로그인이 필요 합니다' : '' }></textarea> */}
+                
                 <button type="submit">등록</button>
             </form>
             {/* <!-- 댓글 목록 --> */}
@@ -241,7 +248,7 @@ function CommentLi({postNum, comment, onRefresh}){
         const formObject=Object.fromEntries(formData.entries());
         //새로운 댓글을 axios 를 이용해서 전송한다.
         api.post(`/posts/${postNum}/comments`, formObject)
-        .then(res=>{
+        .then(()=>{
             onRefresh();
             setInsertForm(false);
         })
@@ -253,8 +260,8 @@ function CommentLi({postNum, comment, onRefresh}){
         //폼에 입력한 내용을 object 로 얻어낸다.
         const formData=new FormData(e.target);
         const formObject=Object.fromEntries(formData.entries());
-        api.patch(`/posts/${postNum}/comments`, formObject)
-        .then(res=>{
+        api.patch(`/posts/${postNum}/comments/${comment.num}`, formObject)
+        .then(()=>{
             onRefresh();
             setUpdateForm(false);
         })
@@ -264,15 +271,24 @@ function CommentLi({postNum, comment, onRefresh}){
     //답글 버튼을 눌렀을때 실행할 함수 
     const handleInsertButton = ()=>{
         setInsertForm(!insertForm);
+        setUpdateForm(false);
     }
     //수정 버튼을 눌렀을때 실행할 함수
     const handleUpdateButton = ()=>{
         setUpdateForm(!updateForm);
+        setInsertForm(false);
     }
 
     //삭제 버튼을 눌렀을때 실행행할 함수
     const handleDeleteButton = ()=>{
-
+        const isDelete=window.confirm("댓글을 삭제하시겠습니까?");
+        if(isDelete){
+            api.delete(`/posts/${postNum}/comments/${comment.num}`)
+            .then(()=>{
+                onRefresh();
+            })
+            .catch(error=>console.log(error));
+        }
     }
 
     /*
@@ -333,25 +349,41 @@ function CommentLi({postNum, comment, onRefresh}){
 						<pre>{comment.content}</pre>
 					</dd>
 				</dl>
-                {/* <!-- 댓글의 댓글 작성할 폼 미리 출력하기  //답글을 눌렀을때 보이게하기 --> */}
-                {   insertForm &&
-                    <form onSubmit={handleReInsertSubmit} className={cx("re-insert-form")}  method="post">
-                        <input type="hidden" name="postNum" defaultValue={postNum}/>
-                        <input type="hidden" name="targetWriter" defaultValue={comment.writer }/>
-                        <input type="hidden" name="parentNum" defaultValue={comment.parentNum }/>
-                        <textarea name="content"></textarea>
-                        <button type="submit">등록츄츄</button>
-                    </form>
-                }
+
                 
-                {/* <!-- 댓글 수정폼 --> */}
-                {   updateForm &&
+                {/* <!-- 댓글의 댓글 작성할 폼 미리 출력하기  //답글을 눌렀을때 보이게하기 --> */}      
+                {   insertForm &&
+                <AnimatePresence mode='sync'>  
+                    <motion.div
+                        key="fom1"
+                        initial={{ opacity:0, scaleY:0 }} //scale확대 축소소
+                        animate={{ opacity:1, scaleY:1 }}
+                        exit={{ opacity:0, scaleY:0 }}
+                        transition={{ duration: 0.2, ease:"easeOut" }}
+                        style={{transformOrigin:"top"}}
+                    >                
+                        <form onSubmit={handleReInsertSubmit} className={cx("re-insert-form")}  method="post">
+                            <input type="hidden" name="postNum" defaultValue={postNum}/>
+                            <input type="hidden" name="targetWriter" defaultValue={comment.writer }/>
+                            <input type="hidden" name="parentNum" defaultValue={comment.parentNum }/>
+                            <textarea name="content"></textarea>
+                            <button type="submit">등록츄츄</button>
+                        </form>
+                    </motion.div>
+                </AnimatePresence>
+                }
+
+                {/* 수정폼도 에니메이션 효과적용하고싶으면 위에꺼 참고해서 하기~ 나는 차이보고싶으니까 안하겠어... */}
+                {/* <!-- 댓글 수정폼 --> */}  
+                {   updateForm && 
                     <form onSubmit={handleUpdateSubmit}  className={cx("update-form")}  method="post">
                         <input type="hidden" name="num" defaultValue={comment.num}/>
                         <textarea name="content" defaultValue={comment.content}></textarea>
                         <button type="submit">수정확인</button>
                     </form>	
                 }
+                
+
             </>
         }
         </li>

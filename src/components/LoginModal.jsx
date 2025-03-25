@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Alert, Button, FloatingLabel, Form, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import api from '../api';
+import { useNavigate } from 'react-router-dom';
 
 function LoginModal(props) {
     //store 로 부터 loginModal 의 상태값을 읽어온다.
@@ -22,11 +23,15 @@ function LoginModal(props) {
     //에러 메세지를 상태값으로 관리
     const [errorMsg, setErrorMsg]=useState(null);
     const dispatch=useDispatch();
+    const navigate = useNavigate();
 
     //로그인 버튼을 눌렀을때 실행할 함수
     const handleLogin = ()=>{
         api.post("/auth", state)
         .then(res=>{
+            //로그인 후에 이동할 경로를 읽어와본다 (null일수도있음)
+            const url = loginModal.url;
+
             //토큰을 localStorage 에 저장
             localStorage.token=res.data;
             //토큰을 디코딩해서 userName 을 얻어온다. 
@@ -40,18 +45,19 @@ function LoginModal(props) {
             //액션 발행하기
             dispatch(action);
             //로그인 모달 숨기기
-            dispatch({type:"LOGIN_MODAL", payload:{show:false}});
+            dispatch({type:"LOGIN_MODAL", payload:{show:false, url:null}});
             //에러 메세지 없애기
             setErrorMsg(null);
             
+            //decoded.exp는 초단위 //*1000으로 밀리초단위로 변경
             const exp = decoded.exp * 1000; 
-            const now = Date.now();
+            const now = Date.now(); //밀리초단위 
+            //로그아웃까지 남은 시간
             const remainingTime = exp - now;
             //자동 로그아웃 예약
             const logoutTimer=setTimeout(()=>{
                 doLogout();
             }, remainingTime);
-            
             //로그아웃 타이머를 store 에 등록
             dispatch({
                 type:"LOGOUT_TIMER",
@@ -61,7 +67,13 @@ function LoginModal(props) {
                 delete localStorage.token;
                 dispatch({ type: 'USER_INFO', payload: null });
                 alert('토큰이 만료되어 자동 로그아웃 되었습니다.');
+                navigate("/"); //최상위 경로로 이동 
             };
+            //만일 원래 목적지 정보가 있다면
+            if(url){
+                //해당 위치로 이동시킨다.
+                navigate(url);
+            }
         })
         .catch(error=>{
             console.log(error);
